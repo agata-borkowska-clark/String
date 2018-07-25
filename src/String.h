@@ -81,7 +81,7 @@ class String {
   char BUFFER[MAX_LENGTH];
   char* STRING = &BUFFER;
 
-  Size length_from_pointer(const char* c_str);
+  Size length_from_pointer(const char* c_str) const;
 };
 
 // None of these functions should need access to anything except the existing

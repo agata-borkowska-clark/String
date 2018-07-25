@@ -66,7 +66,7 @@ String::String(const String& other) {
 // String bar{std::move(foo)};  // move
 // std::cout << bar << "\n";  // shows "Hello!"
 // std::cout << foo << "\n";  // allowed to show anything but must not crash.
-String::String(String&& other);
+String::String(String&&) { throw std::logic_error("Not implemented."); }
 
 // Copy-assignment operator: Overwrite this string with a copy of other.
 // Take care not to have any memory leaks!
@@ -91,7 +91,7 @@ String& String::operator=(const String& other) {
 // foo = std::move(bar);  // move-assign.
 // std::cout << bar << "\n";  // shows "Hello!"
 // std::cout << foo << "\n";  // allowed to show anything but must not crash.
-String& String::operator=(String&& other) {
+String& String::operator=(String&&) {
   throw std::logic_error("Not implemented.");
 }
 
@@ -126,21 +126,21 @@ Size String::length_from_pointer(const char* c_str) const {
 }
 
 // output s to a stream (eg. std::cout).
-std::ostream& operator<<(std::ostream& output, const String& s) {
+std::ostream& operator<<(std::ostream&, const String&) {
   throw std::logic_error("Not implemented.");
 }
 
 // substring from start position to end. start must be <= s.length().
-String substring(const String& s, String::Size start) {
+String substring(const String&, String::Size) {
   throw std::logic_error("Not implemented.");
 }
 
 // substring [start, start + length). substring indices must be fully inside s.
-String substring(const String& s, String::Size start, String::Size length) {
+String substring(const String&, String::Size, String::Size) {
   throw std::logic_error("Not implemented.");
 }
 
 // String concatenation.
-String operator+(const String& a, const String& b) {
+String operator+(const String&, const String&) {
   throw std::logic_error("Not implemented.");
 }
