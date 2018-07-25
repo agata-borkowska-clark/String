@@ -66,12 +66,13 @@ class String {
   // String foo{"Hello!"};
   // char* c_string = foo.data();
   // std::cout << c_string << "\n";  // shows "Hello!"
+  const char* data() const;
   char* data();
 
   // Returns the length of the string.
   // String foo{"Hello!"};
   // std::cout << foo.length() << "\n";  // shows 6.
-  Size length();
+  Size length() const;
 
  private:
   // insert gubbins here.

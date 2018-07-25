@@ -100,6 +100,10 @@ String& String::operator=(String&& other) {
 // String foo{"Hello!"};
 // char* c_string = foo.data();
 // std::cout << c_string << "\n";  // shows "Hello!"
+const char* String::data() const {
+  return STRING;
+}
+
 char* String::data() {
   return STRING;
 }
@@ -107,11 +111,11 @@ char* String::data() {
 // Returns the length of the string.
 // String foo{"Hello!"};
 // std::cout << foo.length() << "\n";  // shows 6.
-Size String::length() {
+Size String::length() const {
   return length_from_pointer(STRING);
 }
 
-Size String::length_from_pointer(const char* c_str) {
+Size String::length_from_pointer(const char* c_str) const {
   Size length = 1;
   char* current_char = c_str;
   while (*current_char != '\0') {
