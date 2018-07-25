@@ -246,6 +246,44 @@ TEST(MutableData) {
       << "data() on a non-const String should be non-const.";
 }
 
+TEST(StringsWithZeros) {
+  String foo('\0', 3);
+  ASSERT(foo.length() == 3) << "Strings should be able to hold '\\0'.";
+}
+
+TEST(Output) {
+  std::ostringstream foo_output;
+  auto text = "Hello, World!"sv;
+  String foo{text.data(), text.length()};
+  foo_output << foo;
+  ASSERT(foo_output.str() == text);
+
+  std::ostringstream bar_output;
+  auto text_with_zero = "Hello\0World"sv;
+  String bar{text_with_zero.data(), text_with_zero.length()};
+  bar_output << bar;
+  ASSERT(bar_output.str() == text_with_zero)
+      << "Output should support strings with '\\0' in them.";
+}
+
+TEST(BasicSubstring) {
+  String foo{"Nobody thinks that Joe is awesome."};
+  String bar{substring(foo, 19)};
+  ASSERT(bar.data() == "Joe is awesome."sv);
+}
+
+TEST(DualSubstring) {
+  String foo{"It is widely accepted that C++ is fantastically hard to use."};
+  String bar{substring(foo, 27, 16)};
+  ASSERT(bar.data() == "C++ is fantastic"sv);
+}
+
+TEST(Concat) {
+  String hello{"Hello, "};
+  String world{"World!"};
+  ASSERT((hello + world).data() == "Hello, World!"sv);
+}
+
 // // This test will fail because of memory corruption.
 // TEST(DoubleDelete) {
 //   int* a = new int;
