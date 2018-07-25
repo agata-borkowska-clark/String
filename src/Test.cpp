@@ -46,7 +46,7 @@ struct AssertionFailure {
     if (done)                                            \
       throw ::AssertionFailure{#expr, output.str()};     \
     else                                                 \
-      output
+      [[maybe_unused]] const auto& internal_stream_result_ = output
 
 // Replace the default new and delete with custom ones which track allocations.
 // This allows the code to catch accidental double-deletes or memory leaks.
@@ -96,7 +96,7 @@ void* operator new(std::size_t size) {
   return allocation.address;
 }
 
-void operator delete(void* p) noexcept {
+void DoDelete(void* p, std::size_t s, bool check_size) noexcept {
   auto begin = allocations, end = allocations + num_allocations;
   auto i =
       std::find_if(begin, end, [&](Allocation a) { return a.address == p; });
@@ -112,11 +112,20 @@ void operator delete(void* p) noexcept {
         "Deallocated an address which was already freed.";
     allocation_failure.raised = true;
     return;
+  } else if (check_size && i->size != s) {
+    allocation_failure.address = p;
+    allocation_failure.message =
+        "Performed a sized deallocation with the wrong size.";
+    allocation_failure.raised = true;
+    return;
   }
   total_size -= i->size;
   i->state = Allocation::FREED;
   std::free(i->address);
 }
+
+void operator delete(void* p) noexcept { DoDelete(p, 0, false); }
+void operator delete(void* p, std::size_t s) noexcept { DoDelete(p, s, true); }
 
 TEST(EmptyString) {
   String empty;
@@ -214,8 +223,8 @@ TEST(MoveAssign) {
 // do this, we pass it to IsConst and rely on overload resolution to pick the
 // right version. The static_assert tests below prove that this will do what we
 // want it to.
-constexpr bool IsConst(char* value) { return false; }
-constexpr bool IsConst(const char* value) { return true; }
+constexpr bool IsConst(char*) { return false; }
+constexpr bool IsConst(const char*) { return true; }
 
 char x = 0;
 const char y = 0;
@@ -227,8 +236,8 @@ TEST(ConstAccess) {
   ASSERT(IsConst(foo.data()))
       << "data() on a const String should be const char*, not char*.";
   // If const is set up wrong, these lines won't compile at all.
-  const char* data = foo.data();
-  auto length = foo.length();
+  [[maybe_unused]] const char* data = foo.data();
+  [[maybe_unused]] auto length = foo.length();
 }
 
 TEST(MutableData) {
