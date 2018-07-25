@@ -282,6 +282,12 @@ void RunTest(std::string_view name, Test* test) {
     std::cout << kGreen << "PASSED" << kReset << "\n";
   } catch (const AssertionFailure& failure) {
     std::cout << kRed << "FAILED" << kReset << "\n" << failure.message << "\n";
+  } catch (const std::exception& error) {
+    std::cout << kRed << "FAILED" << kReset << "\n"
+              << "Unhandled exception: " << error.what() << "\n";
+  } catch (...) {
+    std::cout << kRed << "FAILED" << kReset << "\n"
+              << "Unhandled (and unrecognised) exception.\n";
   }
 }
 
