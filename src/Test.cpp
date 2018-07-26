@@ -11,6 +11,12 @@
 
 using namespace std::literals;
 
+constexpr char kCyan[] = "\x1B[36m";
+constexpr char kGreen[] = "\x1B[32m";
+constexpr char kYellow[] = "\x1B[33m";
+constexpr char kRed[] = "\x1B[31m";
+constexpr char kReset[] = "\x1B[0m";
+
 // Create a registry for test cases. Each test will register itself into this
 // map with a name.
 using Test = void();
@@ -28,9 +34,11 @@ std::map<std::string_view, Test*> tests;
 // In tests we can use ASSERT to verify conditions. If any ASSERT fails then the
 // test fails and a message will be displayed showing the condition that failed.
 struct AssertionFailure {
-  AssertionFailure(const char* expression, std::string user_message) {
+  AssertionFailure(const char* file, int line, const char* expression,
+                   std::string user_message) {
     std::ostringstream output;
-    output << "Assertion failed: " << expression;
+    output << "Assertion failed at " << file << ":" << line << ": "
+           << kCyan << expression << kReset;
     if (!user_message.empty()) output << "\n" << user_message;
     message = output.str();
   }
@@ -38,15 +46,77 @@ struct AssertionFailure {
   std::string message;
 };
 
-#define ASSERT(expr)                                     \
-  for (auto [done, result, output] =                     \
-           ::std::tuple{false, !static_cast<bool>(expr), \
-                        ::std::ostringstream{}};         \
-       result; done = true)                              \
-    if (done)                                            \
-      throw ::AssertionFailure{#expr, output.str()};     \
-    else                                                 \
+template <typename T> std::string Dump(T value) {
+  std::ostringstream output;
+  output << value;
+  return output.str();
+}
+
+template <> std::string Dump(char c) {
+  std::ostringstream output;
+  output << "'" << c << "'";
+  return output.str();
+}
+
+template <> std::string Dump(std::string_view sv) {
+  std::ostringstream output;
+  output << "\"" << sv << "\"";
+  return output.str();
+}
+
+std::string Dump(const char* c_str) { return Dump(std::string_view{c_str}); }
+std::string Dump(char* c_str) { return Dump(std::string_view{c_str}); }
+std::string Dump(std::string str) { return Dump(std::string_view{str}); }
+
+template <typename A, typename B>
+struct AssertEqual {
+  using CommonType = typename std::common_type<A, B>::type;
+  AssertEqual(const char* file, int line, const char* a_str, const A& a,
+              const char* b_str, const B& b)
+      : file(file),
+        line(line),
+        a_str(a_str),
+        a_val(Dump(a)),
+        b_str(b_str),
+        b_val(Dump(b)),
+        equal(static_cast<CommonType>(a) == static_cast<CommonType>(b)) {}
+
+  const char* file;
+  int line;
+  const char* a_str;
+  std::string a_val;
+  const char* b_str;
+  std::string b_val;
+  bool equal;
+  std::ostringstream message;
+  bool message_collected = false;
+
+  AssertionFailure Build() {
+    std::ostringstream output;
+    output << kCyan << a_str << " == " << b_str << kReset << "\n"
+           << "Left: " << kCyan << a_val << kReset << "\n"
+           << "Right: " << kCyan << b_val << kReset;
+    return AssertionFailure(file, line, output.str().c_str(), message.str());
+  }
+};
+
+#define ASSERT(expr)                                                     \
+  for (auto [done, result, output] =                                     \
+           ::std::tuple{false, !static_cast<bool>(expr),                 \
+                        ::std::ostringstream{}};                         \
+       result; done = true)                                              \
+    if (done)                                                            \
+      throw ::AssertionFailure{__FILE__, __LINE__, #expr, output.str()}; \
+    else                                                                 \
       [[maybe_unused]] const auto& internal_stream_result_ = output
+
+#define ASSERT_EQ(a, b)                                               \
+  for (AssertEqual assert_data{__FILE__, __LINE__, #a, (a), #b, (b)}; \
+       !assert_data.equal; assert_data.message_collected = true)      \
+    if (assert_data.message_collected)                                \
+      throw assert_data.Build();                                      \
+    else                                                              \
+      [[maybe_unused]] const auto& internal_stream_result_ = assert_data.message
 
 // Replace the default new and delete with custom ones which track allocations.
 // This allows the code to catch accidental double-deletes or memory leaks.
@@ -129,28 +199,28 @@ void operator delete(void* p, std::size_t s) noexcept { DoDelete(p, s, true); }
 
 TEST(EmptyString) {
   String empty;
-  ASSERT(empty.length() == 0);
-  ASSERT(empty.data()[0] == '\0');
+  ASSERT_EQ(empty.length(), 0);
+  ASSERT_EQ(empty.data()[0], '\0');
 }
 
 TEST(FilledString) {
   String filled{'a', 3};
-  ASSERT(filled.length() == 3);
-  ASSERT(filled.data() == "aaa"sv);
+  ASSERT_EQ(filled.length(), 3);
+  ASSERT_EQ(filled.data(), "aaa"sv);
 }
 
 TEST(NulTerminatedString) {
   const char* input = "Hello, World!";
   String cstring{input};
-  ASSERT(cstring.data() == std::string_view{input});
+  ASSERT_EQ(cstring.data(), std::string_view{input});
   ASSERT(cstring.data() != input) << "String should allocate its own buffer.";
 }
 
 TEST(StringCopy) {
   String foo{"foo"};
   String copy = foo;
-  ASSERT(foo.data() == "foo"sv);
-  ASSERT(copy.data() == "foo"sv);
+  ASSERT_EQ(foo.data(), "foo"sv);
+  ASSERT_EQ(copy.data(), "foo"sv);
   ASSERT(foo.data() != copy.data())
       << "String copy should have its own buffer.";
 }
@@ -159,7 +229,7 @@ TEST(StringMove) {
   String foo{"foo"};
   const char* data = foo.data();
   String moved = std::move(foo);
-  ASSERT(moved.data() == data)
+  ASSERT_EQ(moved.data(), data)
       << "String move should steal the existing buffer.";
 
   // We want to test that an allocation failure when trying to move-construct
@@ -183,12 +253,12 @@ TEST(CopyAssign) {
   String foo{"foo"};
   String bar;
   bar = foo;
-  ASSERT(foo.data() == "foo"sv);
-  ASSERT(bar.data() == "foo"sv);
+  ASSERT_EQ(foo.data(), "foo"sv);
+  ASSERT_EQ(bar.data(), "foo"sv);
   ASSERT(foo.data() != bar.data())
       << "String copy should have its own buffer.";
   bar = bar;  // This shouldn't explode but concievably could...
-  ASSERT(bar.data() == "foo"sv);
+  ASSERT_EQ(bar.data(), "foo"sv);
 
   String baz{'!', 128};  // has to be long enough to force allocation.
 
@@ -204,7 +274,7 @@ TEST(CopyAssign) {
   force_next_allocation_failure = false;
   ASSERT(had_exception) << "Whoops! The test isn't working properly :(";
 
-  ASSERT(bar.data() == "foo"sv)
+  ASSERT_EQ(bar.data(), "foo"sv)
       << "Copy-assign with failed allocation should have no effect.";
 }
 
@@ -213,10 +283,10 @@ TEST(MoveAssign) {
   const char* data = foo.data();
   String bar;
   bar = std::move(foo);
-  ASSERT(bar.data() == data)
+  ASSERT_EQ(bar.data(), data)
       << "String move should steal the existing buffer.";
   bar = bar;  // This shouldn't explode but concievably could...
-  ASSERT(bar.data() == "foo"sv);
+  ASSERT_EQ(bar.data(), "foo"sv);
 }
 
 // We want to check that data() returns a pointer to const char, not to char. To
@@ -248,7 +318,7 @@ TEST(MutableData) {
 
 TEST(StringsWithZeros) {
   String foo('\0', 3);
-  ASSERT(foo.length() == 3) << "Strings should be able to hold '\\0'.";
+  ASSERT_EQ(foo.length(), 3) << "Strings should be able to hold '\\0'.";
 }
 
 TEST(Output) {
@@ -256,32 +326,32 @@ TEST(Output) {
   auto text = "Hello, World!"sv;
   String foo{text.data(), text.length()};
   foo_output << foo;
-  ASSERT(foo_output.str() == text);
+  ASSERT_EQ(foo_output.str(), text);
 
   std::ostringstream bar_output;
   auto text_with_zero = "Hello\0World"sv;
   String bar{text_with_zero.data(), text_with_zero.length()};
   bar_output << bar;
-  ASSERT(bar_output.str() == text_with_zero)
+  ASSERT_EQ(bar_output.str(), text_with_zero)
       << "Output should support strings with '\\0' in them.";
 }
 
 TEST(BasicSubstring) {
   String foo{"Nobody thinks that Joe is awesome."};
   String bar{substring(foo, 19)};
-  ASSERT(bar.data() == "Joe is awesome."sv);
+  ASSERT_EQ(bar.data(), "Joe is awesome."sv);
 }
 
 TEST(DualSubstring) {
   String foo{"It is widely accepted that C++ is fantastically hard to use."};
   String bar{substring(foo, 27, 16)};
-  ASSERT(bar.data() == "C++ is fantastic"sv);
+  ASSERT_EQ(bar.data(), "C++ is fantastic"sv);
 }
 
 TEST(Concat) {
   String hello{"Hello, "};
   String world{"World!"};
-  ASSERT((hello + world).data() == "Hello, World!"sv);
+  ASSERT_EQ((hello + world).data(), "Hello, World!"sv);
 }
 
 // // This test will fail because of memory corruption.
@@ -299,10 +369,6 @@ TEST(Concat) {
 // Function to run a test case, catching any assertions which fail and verifying
 // memory allocation.
 void RunTest(std::string_view name, Test* test) {
-  constexpr char kGreen[] = "\x1B[32m";
-  constexpr char kYellow[] = "\x1B[33m";
-  constexpr char kRed[] = "\x1B[31m";
-  constexpr char kReset[] = "\x1B[0m";
   std::cout << kYellow << name << kReset << ": ";
   force_next_allocation_failure = false;
   allocation_failure.raised = false;
@@ -310,12 +376,13 @@ void RunTest(std::string_view name, Test* test) {
     auto heap_before = total_size;
     test();
     auto heap_after = total_size;
-    ASSERT(heap_before == heap_after)
+    ASSERT_EQ(heap_before, heap_after)
         << (heap_after - heap_before) << " byte(s) of memory were leaked.";
     if (allocation_failure.raised) {
       std::ostringstream output;
       output << "Address: " << allocation_failure.address;
-      throw AssertionFailure{allocation_failure.message, output.str()};
+      throw AssertionFailure{__FILE__, __LINE__, allocation_failure.message,
+                             output.str()};
     }
     std::cout << kGreen << "PASSED" << kReset << "\n";
   } catch (const AssertionFailure& failure) {
