@@ -13,7 +13,7 @@ class String {
   // Constructs a new string containing a given repeated character.
   String(char c, Size size);
 
-  // Construct a string by copying the value of a null-terminated string.
+  // Construct a string by copying the value of a nul-terminated string.
   // String foo{"Hello!"};
   String(const char* c_str);
 
@@ -68,19 +68,32 @@ class String {
   // String foo{"Hello!"};
   // char* c_string = foo.data();
   // std::cout << c_string << "\n";  // shows "Hello!"
-  char* data();
+  char* data() const;
 
   // Returns the length of the string.
   // String foo{"Hello!"};
   // std::cout << foo.length() << "\n";  // shows 6.
-  Size length();
+  Size length() const;
 
  private:
   // insert gubbins here.
-  char[] BUFFER;
-  Size length;
-
-  Size length_from_pointer(const char* c_str);
+  Size LENGTH;
+  char* first_char;
 };
+
+// None of these functions should need access to anything except the existing
+// public interface of the string to be implemented efficiently.
+
+// output s to a stream (eg. std::cout).
+std::ostream& operator<<(std::ostream& output, const String& s);
+
+// substring from start position to end. start must be <= s.length().
+String substring(const String& s, String::Size start);
+
+// substring [start, start + length). substring indices must be fully inside s.
+String substring(const String& s, String::Size start, String::Size length);
+
+// String concatenation.
+String operator+(const String& a, const String& b);
 
 #endif // STRING_H
