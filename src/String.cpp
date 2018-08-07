@@ -28,12 +28,12 @@ String::String(char c, Size size) {
 String::String(const char* c_str) {
   // tis inefficient
   LENGTH = 1;
-  char* current = c_str;
+  char* current = &(*c_str);
   while (*current != '\0') {
     ++LENGTH;
     ++current;
   }
-  current = c_str;
+  current = &(*c_str);
   char STRING[] = new char[LENGTH]();
   for (Size i = 0; i < LENGTH - 1; i ++) {
     STRING[i] = *current;
@@ -49,9 +49,10 @@ String::String(const char* c_str) {
 String::String(const char* data, Size size) {
   char STRING[] = new char[size+1]();
   LENGTH = size+1;
+  char* current = &(*data);
   for (Size i = 0; i < size; i++) {
-    STRING[i] = *data;
-    ++data;
+    STRING[i] = *current;
+    ++current;
   }
   STRING[size] = '\0';
   first_char = &STRING[0];
