@@ -26,7 +26,7 @@ class String {
   // have bugs.
 
   // Destructor.
-  ~String();
+  //~String();
 
   // Copy constructor: Create a new string which is a copy of other.
   // String foo{"Hello!"};
@@ -43,7 +43,7 @@ class String {
   // String bar{std::move(foo)};  // move
   // std::cout << bar << "\n";  // shows "Hello!"
   // std::cout << foo << "\n";  // allowed to show anything but must not crash.
-  String(String&& other);
+  //String(String&& other);
 
   // Copy-assignment operator: Overwrite this string with a copy of other.
   // Take care not to have any memory leaks!
@@ -51,7 +51,7 @@ class String {
   // String bar{"Hello!"};
   // foo = bar;  // copy-assign.
   // std::cout << foo << "\n" << bar << "\n";  // shows "Hello!" twice.
-  String& operator=(const String& other);
+  //String& operator=(const String& other);
 
   // Move-assignment operator: Overwrite this string with the value of other,
   // potentially destroying other. The same rules apply here as for the
@@ -61,7 +61,7 @@ class String {
   // foo = std::move(bar);  // move-assign.
   // std::cout << bar << "\n";  // shows "Hello!"
   // std::cout << foo << "\n";  // allowed to show anything but must not crash.
-  String& operator=(String&& other);
+  //String& operator=(String&& other);
 
   // Returns a pointer to length()+1 chars, where the first length() chars are
   // the contents of the string and the last char is a nul terminator.
