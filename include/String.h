@@ -68,7 +68,8 @@ class String {
   // String foo{"Hello!"};
   // char* c_string = foo.data();
   // std::cout << c_string << "\n";  // shows "Hello!"
-  char* data() const;
+  const char* data() const;
+  char* data();
 
   // Returns the length of the string.
   // String foo{"Hello!"};
