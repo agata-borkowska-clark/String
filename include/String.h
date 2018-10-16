@@ -78,8 +78,8 @@ class String {
 
  private:
   // insert gubbins here.
-  Size LENGTH;
-  char* first_char;
+  Size length_;
+  char* first_char_;
 };
 
 // None of these functions should need access to anything except the existing

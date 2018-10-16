@@ -6,56 +6,52 @@ using Size = unsigned long long;
 // Constructs an empty string.
 // String foo;
 String::String() {
-  char* STRING = new char[1];
-  STRING[0] = '\0';
-  first_char = &STRING[0];
-  LENGTH = 1;
+  first_char_ = new char[1];
+  first_char_[0] = '\0';
+  length_ = 1;
 }
 
 // Constructs a new string containing a given repeated character.
 String::String(char c, Size size) {
-  char* STRING = new char[size+1]();
-  for (Size i = 0; i < size; i++) {
-    STRING[i] = c;
+  length_ = size + 1;
+  first_char_ = new char[length_]();
+  for (Size i = 0; i < length_ - 1; i++) {
+    first_char_[i] = c;
   }
-  STRING[size] = '\0';
-  LENGTH = size + 1;
-  first_char = &STRING[0];
+  first_char_[length_ - 1] = '\0';
 }
 
 // Construct a string by copying the value of a null-terminated string.
 // String foo{"Hello!"};
 String::String(const char* c_str) {
   // tis inefficient
-  LENGTH = 1;
+  length_ = 1;
   const char* current = c_str;
   while (current) {
-    ++LENGTH;
+    length_++;
     current++;
   }
   current = c_str;
-  char* STRING = new char[LENGTH];
-  for (Size i = 0; i < LENGTH - 1; i ++) {
-    STRING[i] = *current;
+  first_char_ = new char[length_];
+  for (Size i = 0; i < length_ - 1; i ++) {
+    first_char_[i] = *current;
     current++;
   }
-  STRING[LENGTH-1] = '\0';
-  first_char = &STRING[0];
+  first_char_[length_ - 1] = '\0';
 }
 
 
 // Construct a string by copying a fixed number of bytes from a buffer.
 // String foo{"Hello!", 6};
 String::String(const char* data, Size size) {
-  char* STRING = new char[size+1]();
-  LENGTH = size+1;
+  length_ = size + 1;
+  first_char_ = new char[length_]();
   const char* current = data;
-  for (Size i = 0; i < size; i++) {
-    STRING[i] = *current;
+  for (Size i = 0; i < length_ - 1; i++) {
+    first_char_[i] = *current;
     current++;
   }
-  STRING[size] = '\0';
-  first_char = &STRING[0];
+  first_char_[length_ - 1] = '\0';
 }
 
 // Rule of five - if you ever have to implement any of the next five
@@ -72,17 +68,15 @@ String::String(const char* data, Size size) {
 // String bar{foo};  // copy
 // std::cout << bar << "\n";  // shows "Hello!"
 // std::cout << foo << "\n";  // shows "Hello!"
-/*String(const String& other) {
-  ~STRING();
-  LENGTH = other.length();
-  char STRING[] = new char[LENGTH]();
+String(String& other) {
+  length_ = other.length();
+  first_char_ = new char[length_]();
   char* current = other.data();
-  for (Size i = 0; i < length; i++) {
-    STRING[i] = *current;
+  for (Size i = 0; i < length_; i++) {
+    first_char_[i] = *current;
     ++current;
   }
-  first_char = &STRING[0];
-}*/
+}
 
 // Move constructor: Create a new string from other, potentially
 // destroying other in the process. However, other must still be a valid
@@ -129,15 +123,15 @@ String& operator=(String&& other) {
 // String foo{"Hello!"};
 // char* c_string = foo.data();
 // std::cout << c_string << "\n";  // shows "Hello!"
-/*char* data() {
-  return STRING;
-}*/
+const char* data() {
+  return this::first_char_;
+}
 
 // Returns the length of the string.
 // String foo{"Hello!"};
 // std::cout << foo.length() << "\n";  // shows 6.
-Size length() {
-  return 0;
+const Size length() {
+  return this::length_;
 }
 
 
