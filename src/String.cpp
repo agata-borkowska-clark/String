@@ -68,10 +68,10 @@ String::String(const char* data, Size size) {
 // String bar{foo};  // copy
 // std::cout << bar << "\n";  // shows "Hello!"
 // std::cout << foo << "\n";  // shows "Hello!"
-String(String& other) {
+String::String(const String& other) {
   length_ = other.length();
   first_char_ = new char[length_]();
-  char* current = other.data();
+  const char* current = other.data();
   for (Size i = 0; i < length_; i++) {
     first_char_[i] = *current;
     ++current;
@@ -123,15 +123,15 @@ String& operator=(String&& other) {
 // String foo{"Hello!"};
 // char* c_string = foo.data();
 // std::cout << c_string << "\n";  // shows "Hello!"
-const char* data() {
-  return this::first_char_;
+const char* String::data() const {
+  return first_char_;
 }
 
 // Returns the length of the string.
 // String foo{"Hello!"};
 // std::cout << foo.length() << "\n";  // shows 6.
-const Size length() {
-  return this::length_;
+Size String::length() const {
+  return length_;
 }
 
 
@@ -142,10 +142,20 @@ const Size length() {
 //std::ostream& operator<<(std::ostream& output, const String& s);
 
 // substring from start position to end. start must be <= s.length().
-//String substring(const String& s, String::Size start);
+String substring(const String& s, String::Size start) {
+    if (start >= s.length()) {
+        return String();
+    }
+    return String(s.data() + start);
+}
 
 // substring [start, start + length). substring indices must be fully inside s.
-//String substring(const String& s, String::Size start, String::Size length);
+String substring(const String& s, String::Size start, String::Size length) {
+    if (start >= s.length() - length) {
+        return String();
+    }
+    return String(s.data() + start, length);
+}
 
 // String concatenation.
 //String operator+(const String& a, const String& b);
