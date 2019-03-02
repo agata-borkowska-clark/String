@@ -127,6 +127,10 @@ const char* String::data() const {
   return first_char_;
 }
 
+char* String::data() {
+  return first_char_;
+}
+
 // Returns the length of the string.
 // String foo{"Hello!"};
 // std::cout << foo.length() << "\n";  // shows 6.
@@ -139,23 +143,28 @@ Size String::length() const {
 // public interface of the string to be implemented efficiently.
 
 // output s to a stream (eg. std::cout).
-//std::ostream& operator<<(std::ostream& output, const String& s);
+std::ostream& operator<<(std::ostream& output, const String& s) {
+  output.write(s.data(), s.length());
+  return output;
+}
 
 // substring from start position to end. start must be <= s.length().
 String substring(const String& s, String::Size start) {
-    if (start >= s.length()) {
-        return String();
-    }
-    return String(s.data() + start);
+  if (start >= s.length()) {
+    return String();
+  }
+  return String(s.data() + start);
 }
 
 // substring [start, start + length). substring indices must be fully inside s.
 String substring(const String& s, String::Size start, String::Size length) {
-    if (start >= s.length() - length) {
-        return String();
-    }
-    return String(s.data() + start, length);
+  if (start >= s.length() - length) {
+    return String();
+  }
+  return String(s.data() + start, length);
 }
 
 // String concatenation.
-//String operator+(const String& a, const String& b);
+//String operator+(const String& a, const String& b) {
+
+//}
