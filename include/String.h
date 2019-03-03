@@ -26,7 +26,7 @@ class String {
   // have bugs.
 
   // Destructor.
-  //~String();
+  ~String();
 
   // Copy constructor: Create a new string which is a copy of other.
   // String foo{"Hello!"};

@@ -8,50 +8,50 @@ using Size = unsigned long long;
 String::String() {
   first_char_ = new char[1];
   first_char_[0] = '\0';
-  length_ = 1;
+  length_ = 0;
 }
 
 // Constructs a new string containing a given repeated character.
 String::String(char c, Size size) {
-  length_ = size + 1;
-  first_char_ = new char[length_]();
-  for (Size i = 0; i < length_ - 1; i++) {
+  length_ = size;
+  first_char_ = new char[length_ + 1]();
+  for (Size i = 0; i < length_; i++) {
     first_char_[i] = c;
   }
-  first_char_[length_ - 1] = '\0';
+  first_char_[length_] = '\0';
 }
 
 // Construct a string by copying the value of a null-terminated string.
 // String foo{"Hello!"};
 String::String(const char* c_str) {
   // tis inefficient
-  length_ = 1;
+  length_ = 0;
   const char* current = c_str;
   while (*current != '\0') {
     length_++;
     current++;
   }
   current = c_str;
-  first_char_ = new char[length_];
-  for (Size i = 0; i < length_ - 1; i ++) {
+  first_char_ = new char[length_ + 1];
+  for (Size i = 0; i < length_; i ++) {
     first_char_[i] = *current;
     current++;
   }
-  first_char_[length_ - 1] = '\0';
+  first_char_[length_] = '\0';
 }
 
 
 // Construct a string by copying a fixed number of bytes from a buffer.
 // String foo{"Hello!", 6};
 String::String(const char* data, Size size) {
-  length_ = size + 1;
-  first_char_ = new char[length_]();
+  length_ = size;
+  first_char_ = new char[length_ +1]();
   const char* current = data;
-  for (Size i = 0; i < length_ - 1; i++) {
+  for (Size i = 0; i < length_; i++) {
     first_char_[i] = *current;
     current++;
   }
-  first_char_[length_ - 1] = '\0';
+  first_char_[length_] = '\0';
 }
 
 // Rule of five - if you ever have to implement any of the next five
@@ -59,9 +59,9 @@ String::String(const char* data, Size size) {
 // have bugs.
 
 // Destructor.
-/*String::~String() {
-  // delete[] STRING;
-}*/
+String::~String() {
+  delete[] first_char_;
+}
 
 // Copy constructor: Create a new string which is a copy of other.
 // String foo{"Hello!"};
@@ -70,7 +70,7 @@ String::String(const char* data, Size size) {
 // std::cout << foo << "\n";  // shows "Hello!"
 String::String(const String& other) {
   length_ = other.length();
-  first_char_ = new char[length_]();
+  first_char_ = new char[length_ + 1]();
   const char* current = other.data();
   for (Size i = 0; i < length_; i++) {
     first_char_[i] = *current;
