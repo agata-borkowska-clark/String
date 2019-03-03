@@ -27,7 +27,7 @@ String::String(const char* c_str) {
   // tis inefficient
   length_ = 1;
   const char* current = c_str;
-  while (current) {
+  while (*current != '\0') {
     length_++;
     current++;
   }
@@ -165,6 +165,6 @@ String substring(const String& s, String::Size start, String::Size length) {
 }
 
 // String concatenation.
-//String operator+(const String& a, const String& b) {
-
-//}
+String operator+(const String& a, const String& b) {
+  return String();
+}
