@@ -165,6 +165,6 @@ String substring(const String& s, String::Size start, String::Size length) {
 }
 
 // String concatenation.
-String operator+(const String& a, const String& b) {
+String operator+(const String&, const String&) {
   return String();
 }
