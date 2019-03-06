@@ -1,6 +1,7 @@
 #include "../include/String.h"
 
 #include <algorithm>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <string>
@@ -148,6 +149,7 @@ void* operator new(std::size_t size) {
     throw std::bad_alloc();
   }
   void* p = std::malloc(size);
+  std::memset(p, '!', size);
   Allocation allocation;
   allocation.size = size;
   allocation.address = p;
@@ -191,7 +193,7 @@ void DoDelete(void* p, std::size_t s, bool check_size) noexcept {
   }
   total_size -= i->size;
   i->state = Allocation::FREED;
-  std::free(i->address);
+  std::memset(i->address, '?', i->size);
 }
 
 void operator delete(void* p) noexcept { DoDelete(p, 0, false); }
@@ -207,6 +209,7 @@ TEST(FilledString) {
   String filled{'a', 3};
   ASSERT_EQ(filled.length(), 3);
   ASSERT_EQ(filled.data(), "aaa"sv);
+  ASSERT_EQ(filled.data()[3], '\0');
 }
 
 TEST(NulTerminatedString) {
@@ -231,18 +234,21 @@ TEST(StringMove) {
   String moved = std::move(foo);
   ASSERT_EQ(moved.data(), data)
       << "String move should steal the existing buffer.";
+}
 
+TEST(StringMoveWithFailedAllocation) {
   // We want to test that an allocation failure when trying to move-construct
   // string will leave the source string in a valid state. I can't think of any
   // good way of testing this without assuming an implementation except to force
   // the code path to happen and see if it causes a segmentation fault. Most of
   // the logic in this section is just checking that the exception actually
   // happened and making sure it doesn't happen elsewhere accidentally.
+  String foo{"foo"};
   force_next_allocation_failure = true;
   bool had_exception = false;
   try {
-    String moved_again = std::move(moved);
-    (void) moved_again;
+    String moved = std::move(foo);
+    (void) moved;
   } catch (const std::bad_alloc&) {
     had_exception = true;
   }
@@ -258,12 +264,20 @@ TEST(CopyAssign) {
   ASSERT_EQ(bar.data(), "foo"sv);
   ASSERT(foo.data() != bar.data())
       << "String copy should have its own buffer.";
-  // bar = bar;  // This shouldn't explode but concievably could...
-  auto& x = bar;
-  bar = x;
-  ASSERT_EQ(bar.data(), "foo"sv);
+}
 
-  String baz{'!', 128};  // has to be long enough to force allocation.
+TEST(CopyAssignSelf) {
+  // Test self-assignment. This indirects via a reference to avoid a warning.
+  String foo{"foo"};
+  auto& x = foo;
+  foo = x;
+  ASSERT_EQ(foo.data(), "foo"sv) << "Self-copy-assignment is broken.";
+}
+
+TEST(CopyAssignWithFailedAllocation) {
+  String foo;
+  String bar{'#', 128};  // has to be long enough to force allocation.
+  const char* foo_data = foo.data();
 
   // This part is a little intricate. We want to test that an allocation failure
   // when trying to copy-assign a string will leave the destination string
@@ -273,12 +287,11 @@ TEST(CopyAssign) {
   // accidentally.
   force_next_allocation_failure = true;
   bool had_exception = false;
-  try { bar = baz; } catch (const std::bad_alloc&) { had_exception = true; }
+  try { foo = bar; } catch (const std::bad_alloc&) { had_exception = true; }
   force_next_allocation_failure = false;
   ASSERT(had_exception) << "Whoops! The test isn't working properly :(";
-
-  ASSERT_EQ(bar.data(), "foo"sv)
-      << "Copy-assign with failed allocation should have no effect.";
+  ASSERT_EQ(foo.data(), foo_data) << "Copy-assign with failed allocation "
+                                     "should leave the destination unchanged.";
 }
 
 TEST(MoveAssign) {
@@ -288,10 +301,41 @@ TEST(MoveAssign) {
   bar = std::move(foo);
   ASSERT_EQ(bar.data(), data)
       << "String move should steal the existing buffer.";
-  //bar = bar;  // This shouldn't explode but concievably could...
-  auto& x = bar;
-  bar = x;
-  ASSERT_EQ(bar.data(), "foo"sv);
+}
+
+TEST(MoveAssignSelf) {
+  // Test self-assignment. This indirects via a reference to avoid a warning.
+  String foo{"foo"};
+  auto& x = foo;
+  foo = x;
+  ASSERT_EQ(foo.data(), "foo"sv) << "Self-move-assignment is broken.";
+}
+
+TEST(MoveAssignWithFailedAllocation) {
+  String foo;
+  String bar{'!', 128};  // has to be long enough to force allocation.
+  const char* foo_data = foo.data();
+  const char* bar_data = bar.data();
+
+  // This part is a little intricate. We want to test that an allocation failure
+  // when trying to copy-assign a string will leave the destination string
+  // untouched. To do this, we force the custom allocator to fail its next
+  // allocation. Most of the logic in this section is just checking that the
+  // exception actually happened and making sure it doesn't happen elsewhere
+  // accidentally.
+  force_next_allocation_failure = true;
+  bool had_exception = false;
+  try {
+    foo = std::move(bar);
+  } catch (const std::bad_alloc&) {
+    had_exception = true;
+  }
+  force_next_allocation_failure = false;
+  ASSERT(had_exception) << "Whoops! The test isn't working properly :(";
+  ASSERT_EQ(foo.data(), foo_data) << "Move-assign with failed allocation "
+                                     "should leave the destination unchanged.";
+  ASSERT_EQ(bar.data(), bar_data) << "Move-assign with failed allocation "
+                                     "should leave the source unchanged.";
 }
 
 // We want to check that data() returns a pointer to const char, not to char. To
@@ -353,10 +397,19 @@ TEST(DualSubstring) {
   ASSERT_EQ(bar.data(), "C++ is fantastic"sv);
 }
 
+TEST(SubstringWithZeros) {
+  String zeros{'\0', 20};
+  ASSERT_EQ(substring(zeros, 5).length(), 15);
+}
+
 TEST(Concat) {
   String hello{"Hello, "};
   String world{"World!"};
   ASSERT_EQ((hello + world).data(), "Hello, World!"sv);
+}
+
+TEST(ConcatWithZeros) {
+  ASSERT_EQ((String('\0', 5) + String('\0', 5)).length(), 10);
 }
 
 // // This test will fail because of memory corruption.
@@ -381,14 +434,14 @@ void RunTest(std::string_view name, Test* test) {
     auto heap_before = total_size;
     test();
     auto heap_after = total_size;
-    ASSERT_EQ(heap_before, heap_after)
-        << (heap_after - heap_before) << " byte(s) of memory were leaked.";
     if (allocation_failure.raised) {
       std::ostringstream output;
       output << "Address: " << allocation_failure.address;
       throw AssertionFailure{__FILE__, __LINE__, allocation_failure.message,
                              output.str()};
     }
+    ASSERT_EQ(heap_before, heap_after)
+        << (heap_after - heap_before) << " byte(s) of memory were leaked.";
     std::cout << kGreen << "PASSED" << kReset << "\n";
   } catch (const AssertionFailure& failure) {
     std::cout << kRed << "FAILED" << kReset << "\n" << failure.message << "\n";
