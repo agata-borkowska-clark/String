@@ -242,6 +242,7 @@ TEST(StringMove) {
   bool had_exception = false;
   try {
     String moved_again = std::move(moved);
+    (void) moved_again;
   } catch (const std::bad_alloc&) {
     had_exception = true;
   }
@@ -257,7 +258,9 @@ TEST(CopyAssign) {
   ASSERT_EQ(bar.data(), "foo"sv);
   ASSERT(foo.data() != bar.data())
       << "String copy should have its own buffer.";
-  bar = bar;  // This shouldn't explode but concievably could...
+  // bar = bar;  // This shouldn't explode but concievably could...
+  auto& x = bar;
+  bar = x;
   ASSERT_EQ(bar.data(), "foo"sv);
 
   String baz{'!', 128};  // has to be long enough to force allocation.
@@ -285,7 +288,9 @@ TEST(MoveAssign) {
   bar = std::move(foo);
   ASSERT_EQ(bar.data(), data)
       << "String move should steal the existing buffer.";
-  bar = bar;  // This shouldn't explode but concievably could...
+  //bar = bar;  // This shouldn't explode but concievably could...
+  auto& x = bar;
+  bar = x;
   ASSERT_EQ(bar.data(), "foo"sv);
 }
 
