@@ -86,8 +86,12 @@ String::String(const String& other) {
 // String bar{std::move(foo)};  // move
 // std::cout << bar << "\n";  // shows "Hello!"
 // std::cout << foo << "\n";  // allowed to show anything but must not crash.
-/*String(String&& other) {
-}*/
+String::String(String&& other) {
+  length_ = other.length();
+  first_char_ = other.data();
+  other.first_char_ = new char[1]{'\0'};
+  other.length_ = 0;
+}
 
 // Copy-assignment operator: Overwrite this string with a copy of other.
 // Take care not to have any memory leaks!
@@ -95,15 +99,16 @@ String::String(const String& other) {
 // String bar{"Hello!"};
 // foo = bar;  // copy-assign.
 // std::cout << foo << "\n" << bar << "\n";  // shows "Hello!" twice.
-/*String& operator=(const String& other) {
-  ~STRING;
-  char STRING[] = new char[other.length()]();
-  char* start = other.data();
-  for (Size i = 0; i < other.length(); i++) {
-    STRING[i] = *(start + i);
+String& String::operator=(const String& other) {
+  delete first_char_;
+  length_ = other.length();
+  first_char_ = new char[length_ + 1]();
+  const char* current = other.data();
+  for (Size i = 0; i < length_; i++) {
+    first_char_[i] = *current;
+    ++current;
   }
-  first_char = &STRING[0];
-  LENGTH = other.length();
+  return *this;
 }
 
 // Move-assignment operator: Overwrite this string with the value of other,
@@ -114,9 +119,13 @@ String::String(const String& other) {
 // foo = std::move(bar);  // move-assign.
 // std::cout << bar << "\n";  // shows "Hello!"
 // std::cout << foo << "\n";  // allowed to show anything but must not crash.
-String& operator=(String&& other) {
-
-}*/
+String& String::operator=(String&& other) {
+  length_ = other.length();
+  first_char_ = other.data();
+  other.first_char_ = new char[1]{'\0'};
+  other.length_ = 0;
+  return *this;
+}
 
 // Returns a pointer to length()+1 chars, where the first length() chars are
 // the contents of the string and the last char is a nul terminator.
