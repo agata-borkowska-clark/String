@@ -426,8 +426,7 @@ TEST(ConcatWithZeros) {
 
 // Function to run a test case, catching any assertions which fail and verifying
 // memory allocation.
-void RunTest(std::string_view name, Test* test) {
-  std::cout << kYellow << name << kReset << ": ";
+bool RunTest(std::string_view name, Test* test) {
   force_next_allocation_failure = false;
   allocation_failure.raised = false;
   try {
@@ -442,18 +441,28 @@ void RunTest(std::string_view name, Test* test) {
     }
     ASSERT_EQ(heap_before, heap_after)
         << (heap_after - heap_before) << " byte(s) of memory were leaked.";
-    std::cout << kGreen << "PASSED" << kReset << "\n";
+    return true;
   } catch (const AssertionFailure& failure) {
-    std::cout << kRed << "FAILED" << kReset << "\n" << failure.message << "\n";
+    std::cout << kYellow << name << kReset << ": " << kRed << "FAILED" << kReset
+              << "\n"
+              << failure.message << "\n";
+    return false;
   } catch (const std::exception& error) {
-    std::cout << kRed << "FAILED" << kReset << "\n"
-              << "Unhandled exception: " << error.what() << "\n";
+    std::cout << kYellow << name << kReset << ": " << kRed << "FAILED" << kReset
+              << "\nUnhandled exception: " << error.what() << "\n";
+    return false;
   } catch (...) {
-    std::cout << kRed << "FAILED" << kReset << "\n"
-              << "Unhandled (and unrecognised) exception.\n";
+    std::cout << kYellow << name << kReset << ": " << kRed << "FAILED" << kReset
+              << "\nUnhandled (and unrecognised) exception.\n";
+    return false;
   }
 }
 
 int main() {
-  for (auto [name, test] : tests) RunTest(name, test);
+  int passes = 0, failures = 0;
+  for (auto [name, test] : tests) (RunTest(name, test) ? passes : failures)++;
+  std::cout << kGreen << passes << " pass" << (passes == 1 ? "" : "es")
+            << kReset << ", " << kRed << failures << " failure"
+            << (failures == 1 ? "" : "s") << kReset << ".\n";
+  return failures;
 }
