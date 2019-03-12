@@ -87,8 +87,8 @@ String::String(const String& other) {
 // std::cout << bar << "\n";  // shows "Hello!"
 // std::cout << foo << "\n";  // allowed to show anything but must not crash.
 String::String(String&& other) {
-  length_ = other.length();
   first_char_ = other.data();
+  length_ = other.length();
   other.first_char_ = new char[1]{'\0'};
   other.length_ = 0;
 }
@@ -101,8 +101,8 @@ String::String(String&& other) {
 // std::cout << foo << "\n" << bar << "\n";  // shows "Hello!" twice.
 String& String::operator=(const String& other) {
   delete first_char_;
-  length_ = other.length();
   first_char_ = new char[length_ + 1]();
+  length_ = other.length();
   const char* current = other.data();
   for (Size i = 0; i < length_; i++) {
     first_char_[i] = *current;
@@ -120,8 +120,9 @@ String& String::operator=(const String& other) {
 // std::cout << bar << "\n";  // shows "Hello!"
 // std::cout << foo << "\n";  // allowed to show anything but must not crash.
 String& String::operator=(String&& other) {
-  length_ = other.length();
+  first_char_ = new char[1]{'\0'};
   first_char_ = other.data();
+  length_ = other.length();
   other.first_char_ = new char[1]{'\0'};
   other.length_ = 0;
   return *this;
