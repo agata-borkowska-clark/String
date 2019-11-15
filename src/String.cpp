@@ -103,7 +103,7 @@ String& String::operator=(const String& other) {
   if (this != &other) {
     char* temp = new char[other.length() + 1];
     length_ = other.length();
-    delete first_char_;
+    delete[] first_char_;
     first_char_ = temp;
     const char* current = other.data();
     for (Size i = 0; i < length_; i++) {
@@ -124,12 +124,14 @@ String& String::operator=(const String& other) {
 // std::cout << bar << "\n";  // shows "Hello!"
 // std::cout << foo << "\n";  // allowed to show anything but must not crash.
 String& String::operator=(String&& other) {
-  // first_char_ = new char[1]{'\0'};
+  // first_char_ = new char[1]{'\0'};.
+  char* temp_char = data();
+  Size temp_length = length();
   first_char_ = other.data();
   length_ = other.length();
-  String* temp = new String();
-  other.first_char_ = temp->first_char_;
-  other.length_ = 0;
+  other.length_ = temp_length;
+  other.first_char_ = temp_char;
+  //other.~String();
   return *this;
 }
 
@@ -181,5 +183,6 @@ String substring(const String& s, String::Size start, String::Size length) {
 
 // String concatenation.
 String operator+(const String&, const String&) {
+  
   return String();
 }
