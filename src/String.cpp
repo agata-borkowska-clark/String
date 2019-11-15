@@ -167,15 +167,15 @@ std::ostream& operator<<(std::ostream& output, const String& s) {
 
 // substring from start position to end. start must be <= s.length().
 String substring(const String& s, String::Size start) {
-  if (start >= s.length()) {
+  if (start > s.length()) {
     return String();
   }
-  return String(s.data() + start);
+  return String(s.data() + start, s.length() - start);
 }
 
 // substring [start, start + length). substring indices must be fully inside s.
 String substring(const String& s, String::Size start, String::Size length) {
-  if (start >= s.length() - length) {
+  if (start > s.length() - length) {
     return String();
   }
   return String(s.data() + start, length);
