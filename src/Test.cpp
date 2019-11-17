@@ -330,6 +330,11 @@ TEST(MoveAssignWithFailedAllocation) {
   } catch (const std::bad_alloc&) {
     had_exception = true;
   }
+  if (force_next_allocation_failure) {
+    // This can only happen if the implementation never invoked new. This is
+    // perfectly reasonable, so we can just skip the test in this case.
+    return;
+  }
   force_next_allocation_failure = false;
   ASSERT(had_exception) << "Whoops! The test isn't working properly :(";
   ASSERT_EQ(foo.data(), foo_data) << "Move-assign with failed allocation "
