@@ -182,7 +182,21 @@ String substring(const String& s, String::Size start, String::Size length) {
 }
 
 // String concatenation.
-String operator+(const String&, const String&) {
-  
-  return String();
+String operator+(const String& s1, const String& s2) {
+  int length_ =  s1.length() + s2.length();
+  String res('1', length_);
+  char* first_char_ = res.data();
+  const char* current = s1.data();
+  for (Size i = 0; i < s1.length(); i++) {
+    first_char_[i] = *current;
+    ++current;
+  }
+  current = s2.data();
+  for (Size j = 0; j < s2.length(); j++) {
+    first_char_[j + s1.length()] = *current;
+   ++current;
+  }
+  //String* res = new String(first_char_, length_);
+  //delete[] first_char_;
+  return res;
 }
